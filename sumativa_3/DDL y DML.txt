@@ -1,0 +1,90 @@
+-- 1. Crea la base y fuerza InnoDB
+CREATE SCHEMA IF NOT EXISTS wikichisme
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+USE wikichisme;
+
+SET default_storage_engine = InnoDB;
+
+-- 2. Elimina tablas previas por si quedaron mal definidas
+DROP TABLE IF EXISTS publicaciones;
+DROP TABLE IF EXISTS temas;
+DROP TABLE IF EXISTS usuarios;
+
+-- 3. Usuarios
+CREATE TABLE usuarios (
+  idusuario    SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  nombrecompleto VARCHAR(50) NOT NULL,
+  usuario      VARCHAR(30) NOT NULL UNIQUE,
+  contrasena   VARCHAR(255) NOT NULL,
+  perfil       ENUM('A','U') NOT NULL DEFAULT 'U',
+  activo       TINYINT(1) NOT NULL DEFAULT 1,
+  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (idusuario)
+) ENGINE=InnoDB;
+
+-- 4. Temas
+CREATE TABLE temas (
+  idtema      MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  nombre      VARCHAR(100) NOT NULL,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (idtema)
+) ENGINE=InnoDB;
+
+-- 5. Publicaciones
+CREATE TABLE publicaciones (
+  idpublicacion INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  idtema         MEDIUMINT UNSIGNED NOT NULL,
+  idusuario      SMALLINT UNSIGNED NOT NULL,
+  titulo         VARCHAR(150)    NOT NULL,
+  texto          TEXT            NOT NULL,
+  created_at     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                     ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (idpublicacion),
+  INDEX fk_pub_tema   (idtema),
+  INDEX fk_pub_usuario(idusuario),
+  CONSTRAINT fk_pub_tema
+    FOREIGN KEY (idtema)
+    REFERENCES temas (idtema)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_pub_usuario
+    FOREIGN KEY (idusuario)
+    REFERENCES usuarios (idusuario)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- Ejemplo de inserts ajustados (sin proyectos)
+INSERT INTO usuarios (
+  nombrecompleto,
+  usuario,
+  contrasena,
+  perfil
+) VALUES 
+  ('Admin de Prueba', 'admin', 'admin123', 'A'),
+  ('francisco', 'francisco', 'admin123', 'A'),
+  ('Usuario Tres', 'user3', 'user3123', 'U');
+
+-- Insertamos temas sin proyecto
+INSERT INTO temas (nombre)
+VALUES ('Tema de prueba 1'), ('Tema de prueba 2');
+
+-- Ajustar los idtema según los inserts anteriores para las publicaciones
+INSERT INTO publicaciones (idtema, idusuario, titulo, texto)
+VALUES
+  (1, 1, 'Título de prueba 1', 'Este es el texto de prueba de la primera publicación.'),
+  (2, 3, 'Título de prueba 2', 'Este es el texto de prueba de la segunda publicación.');
+
+-- Consulta de usuarios para verificar
+SELECT idusuario, nombrecompleto, usuario, perfil
+FROM usuarios;
+
+-- Consulta de temas para verificar
+SELECT * FROM temas;
+
+-- Consulta de publicaciones para verificar
+SELECT * FROM publicaciones;
